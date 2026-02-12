@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+const API_URL = "https://catalyst-backend-x5c6.onrender.com/"; // Replace with YOUR actual Render URL
 
 // --- MOCK DATA ---
 const initialTasks = [
@@ -151,7 +152,7 @@ const handleCoachingRequest = async () => {
 
     try {
         // Initiate the fetch call to the compliant backend route
-        const response = await fetch('http://localhost:3001/api/remediate-coach', {
+        const response = await fetch('${API_URL}/api/remediate-coach', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: userPrompt }),
@@ -239,7 +240,7 @@ const handleCoachingRequest = async () => {
     const userPrompt = `You are a PS Subject Matter Expert. Provide a 3-paragraph, executive-level summary and its primary relevance to Professional Services consulting for the following topic: "${query}".`;
 
     try {
-        const response = await fetch('http://localhost:3001/api/quick-skill', {
+        const response = await fetch('${API_URL}/api/quick-skill', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: userPrompt }),
@@ -271,14 +272,14 @@ const handleCoachingRequest = async () => {
     setLiveSummaryData({ executive_summary: "Orchestrating Gemini API... Analyzing transcript structure...", action_items: [], potential_blockers: [] });
 
     try {
-      const response = await fetch('http://localhost:3001/api/process-summary', {
+      const response = await fetch('${API_URL}/api/process-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript: transcript }),
       });
 
       if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}. Is the backend running on port 3001?`);
+        throw new Error(`Server responded with status: ${response.status}. Is the backend running on Render?`);
       }
 
       const result = await response.json();
