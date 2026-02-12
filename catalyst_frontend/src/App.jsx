@@ -152,7 +152,7 @@ const handleCoachingRequest = async () => {
 
     try {
         // Initiate the fetch call to the compliant backend route
-        const response = await fetch('${API_URL}/api/remediate-coach', {
+        const response = await fetch(`${API_URL}/api/remediate-coach`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: userPrompt }),
@@ -240,7 +240,7 @@ const handleCoachingRequest = async () => {
     const userPrompt = `You are a PS Subject Matter Expert. Provide a 3-paragraph, executive-level summary and its primary relevance to Professional Services consulting for the following topic: "${query}".`;
 
     try {
-        const response = await fetch('${API_URL}/api/quick-skill', {
+        const response = await fetch(`${API_URL}/api/quick-skill`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: userPrompt }),
@@ -272,7 +272,7 @@ const handleCoachingRequest = async () => {
     setLiveSummaryData({ executive_summary: "Orchestrating Gemini API... Analyzing transcript structure...", action_items: [], potential_blockers: [] });
 
     try {
-      const response = await fetch('${API_URL}/api/process-summary', {
+      const response = await fetch(`${API_URL}/api/process-summary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript: transcript }),
@@ -1065,8 +1065,13 @@ const generatePDF = (certId) => {
     <div className="min-h-screen flex flex-col">
       <style>{`
         body { font-family: 'Inter', sans-serif; }
-        .dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2); }
-        .font-serif { font-family: 'Times New Roman', Times, serif; } /* Fallback for Serif */
+  .dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2); }
+  .font-serif { font-family: 'Times New Roman', Times, serif; }
+
+  /* REMOVED OLD WORKAROUND: Force standard colors for PDF generation */
+  .cert-fix-color {
+      color: #1a1a1a !important; /* Standard Hex instead of oklch */
+      background-color: #ffffff !important;
       `}</style>
       <Header />
      <div className="flex flex-1 overflow-hidden">
