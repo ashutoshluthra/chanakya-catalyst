@@ -31,6 +31,12 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
+// --- Health Check Route ---
+// Pro-Tip: Open this in your browser to "wake up" the Render server before the presentation!
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'Online', message: 'Chanakya Catalyst Backend is active' });
+});
+
 // --- Structured Data Schema ---
 const MeetingSummarySchema = {
     type: "OBJECT",
