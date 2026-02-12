@@ -1,0 +1,47 @@
+/* File: src/index.css - S&O COMPLIANT STRUCTURE */
+
+/* CRITICAL: Use @tailwind directives. This replaces the old @import "tailwindcss". */
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+
+
+/* Note: All custom theme, background, and dark mode logic has been REMOVED from CSS. 
+It is now managed exclusively by Tailwind utility classes in your JSX and HTML. */
+
+
+/* Import Tailwind */
+@import "tailwindcss";
+
+/* src/index.css - COMPLETE VISUAL NEUTRALIZATION */
+
+
+
+/* Custom CSS (theme colors, background, etc.) */
+/* html, body {
+  font-family: 'Arial', sans-serif;
+  transition: background-color 0.3s ease;
+}
+
+@theme {
+  --color-brand: #4f46e5; /* Brand primary color */
+  /* --color-brand-light: #eef2ff; /* Light theme color */
+  /* --color-brand-dark: #1e1b4b; Dark theme color */ */
+/* } */
+
+/* Default Light Theme */
+/* html, body {
+  background-color: var(--color-brand-light);
+  color: #333;
+}
+
+.dark html, .dark body {
+  background-color: var(--color-brand-dark);
+  color: #fff;
+} */
+
+/* Smooth transitions for theme switching */
+/* body {
+  @apply transition-colors duration-300 ease-in-out;
+} */
+{}

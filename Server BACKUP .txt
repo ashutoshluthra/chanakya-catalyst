@@ -1,0 +1,109 @@
+const express = require('express');
+const { GoogleGenAI } = require('@google/genai');
+const dotenv = require('dotenv');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+
+// Load environment variables from .env file
+dotenv.config();
+
+const app = express();
+const BACKEND_PORT = 3001;
+const FRONTEND_ORIGIN = 'http://localhost:5173'; // Vite's default port
+
+// --- Check for API Key ---
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+    console.error("FATAL ERROR: GEMINI_API_KEY is not set in the .env file.");
+    console.error("Please ensure you have created a '.env' file with your key.");
+    process.exit(1);
+}
+
+// Initialize the Gemini AI client
+const ai = new GoogleGenAI({ apiKey });
+
+// --- Middleware Setup ---
+app.use(bodyParser.json());
+app.use(cors({ origin: FRONTEND_ORIGIN })); // Allow requests from the frontend port
+
+// --- The Meeting Note Processor Gem Logic ---
+const meetingNoteSystemInstruction = "Act as an experienced Professional Services Project Manager for a top-tier consulting firm. Your goal is to synthesize raw meeting transcripts into actionable, high-level summaries for executive review. Maintain a concise, professional, and confident tone. Analyze the raw transcript and extract only the finalized decisions, owners, and risks. Ignore conversational filler, tangents, and informal language.";
+
+const meetingNoteSchema = {
+    type: "OBJECT",
+    properties: {
+        executive_summary: {
+            type: "STRING",
+            description: "A concise, 3-sentence summary of the meeting's primary conclusion or progress."
+        },
+        key_decisions: {
+            type: "ARRAY",
+            description: "A list of all final decisions made during the meeting.",
+            items: { type: "STRING" }
+        },
+        action_items: {
+            type: "ARRAY",
+            description: "A list of tasks identified, including the owner and deadline (if mentioned).",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    task: { type: "STRING" },
+                    owner: { type: "STRING" },
+                    due_date: { type: "STRING" }
+                }
+            }
+        },
+        potential_blockers: {
+            type: "ARRAY",
+            description: "List any risks, unresolved issues, or roadblocks discussed.",
+            items: { type: "STRING" }
+        }
+    },
+    required: ["executive_summary", "action_items"]
+};
+
+
+// --- API Endpoint for Frontend ---
+app.post('/api/process-summary', async (req, res) => {
+    const { transcript } = req.body;
+
+    if (!transcript || transcript.length < 50) {
+        return res.status(400).json({ status: 'error', message: 'Transcript too short or missing.' });
+    }
+    
+    try {
+        const userPrompt = `Analyze the following transcript. Generate the full, structured summary: \n\n${transcript}`;
+        
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-09-2025",
+            contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+            config: {
+                systemInstruction: { parts: [{ text: meetingNoteSystemInstruction }] },
+                responseMimeType: "application/json",
+                responseSchema: meetingNoteSchema
+            }
+        });
+
+        // The response text is a JSON string enforced by the schema
+        const jsonString = response.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!jsonString) {
+            console.error("[ERROR] Gemini returned no structured content.");
+            return res.status(500).json({ status: 'error', message: 'AI failed to generate structured output.' });
+        }
+
+        const summaryData = JSON.parse(jsonString);
+
+        res.json({ status: 'success', summary: summaryData });
+
+    } catch (error) {
+        console.error("[ERROR] Failed during Gemini API call:", error);
+        res.status(500).json({ status: 'error', message: 'Internal API error during processing.' });
+    }
+});
+
+
+// --- Start Server ---
+app.listen(BACKEND_PORT, () => {
+    console.log(`[SUCCESS] Chanakya Catalyst Backend running at http://localhost:${BACKEND_PORT}`);
+});

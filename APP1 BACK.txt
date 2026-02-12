@@ -1,0 +1,317 @@
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+
+/* -------------------- Mock Data -------------------- */
+const initialTasks = [
+  { id: 1, name: "Project Alpha: ARD (Architecture Document) Draft", status: "Pending", type: "Augmentation", points: 150, isComplete: false, projectId: "client-acme-1" },
+  { id: 2, name: "Project Beta: Meeting Summary (10/22)", status: "Review", type: "Augmentation", points: 100, isComplete: false, projectId: "client-acme-1" },
+  { id: 3, name: "Project Gamma: Security Audit Plan Outline", status: "Pending", type: "Augmentation", points: 200, isComplete: false, projectId: "client-zeta-2" },
+  { id: 4, name: "Client Z: Final Project Closeout Report", status: "Complete", type: "Augmentation", points: 0, isComplete: true, projectId: "client-acme-1" },
+];
+
+const mockCertificates = [
+  { id: "ai-aug-spec", name: "AI Augmentation Specialist", course: "Level 1: Dynamic Task Augmentation", issuedBy: "Chanakya's Catalyst", issuedTo: "Aluthra (PS Consultant)", issuedDate: "2025-10-22", hours: 12 },
+  { id: "so-gov-cert", name: "S&O Governance Certified", course: "Operational Health Check Mastery", issuedBy: "Chanakya's Catalyst", issuedTo: "Aluthra (PS Consultant)", issuedDate: "2025-08-15", hours: 8 },
+];
+
+const learningModules = [
+  { name: "Prompt Engineering: Advanced Client Summaries", progress: 85, daysLeft: 2 },
+  { name: "S&O Compliance: Cloud Migration Architecture", progress: 40, daysLeft: 7 },
+  { name: "Data Ethics for Client-Facing Deliverables", progress: 100, daysLeft: 0 },
+];
+
+const mockLeaderboard = [
+  { rank: 1, name: "Arjun S.", points: 3400, augmentedTasks: 35 },
+  { rank: 2, name: "Priya L.", points: 2950, augmentedTasks: 28 },
+  { rank: 3, name: "Aluthra", points: 1250, augmentedTasks: 12 },
+  { rank: 4, name: "David M.", points: 900, augmentedTasks: 8 },
+  { rank: 5, name: "Sarah K.", points: 650, augmentedTasks: 5 },
+];
+
+/* -------------------- Theme Logic -------------------- */
+const getInitialTheme = () => {
+  try {
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark") return true;
+    if (stored === "light") return false;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  } catch {
+    return false;
+  }
+};
+
+/* -------------------- App -------------------- */
+const App = () => {
+  const [isDarkMode, setIsDarkMode] = useState(getInitialTheme);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      root.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = useCallback(() => setIsDarkMode((p) => !p), []);
+
+  /* -------------------- App State -------------------- */
+  const [view, setView] = useState("dashboard");
+  const [tasks, setTasks] = useState(initialTasks);
+  const [points, setPoints] = useState(1250);
+
+  /* -------------------- Header -------------------- */
+  const Header = () => (
+    <header className="flex items-center justify-between px-6 py-3 shadow-md bg-indigo-50 dark:bg-indigo-950 sticky top-0 z-40 transition-colors">
+      <div className="flex items-center space-x-4">
+        <img
+          src="/brand-logo.png"
+          alt="Chanakya Catalyst"
+          className="h-10 w-auto object-contain"
+        />
+        {/* <div className="bg-indigo-600 text-white p-4">
+  Tailwind is working!
+</div> */}
+
+        
+        <div>
+          <h1 className="text-lg font-extrabold text-indigo-700 dark:text-amber-300">
+            Chanakya’s Catalyst
+          </h1>
+          <p className="text-xs text-gray-600 dark:text-gray-300">
+            Enterprise Productivity Intelligence
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-4">
+        {/* Tabs */}
+        <nav className="hidden md:flex items-center space-x-3">
+          {["dashboard", "certificates", "leaderboard"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setView(tab)}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                view === tab
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-700 dark:text-gray-200 hover:bg-indigo-100 dark:hover:bg-indigo-800"
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </nav>
+
+        {/* Points Badge */}
+        <div className="flex items-center bg-indigo-600 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-sm">
+          ⚡ {points} pts
+        </div>
+
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleDarkMode}
+          aria-pressed={isDarkMode}
+          title="Toggle theme"
+          className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 hover:ring-2 ring-indigo-400 transition"
+        >
+          {isDarkMode ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="5" />
+              <path d="M12 1v2m0 18v2M4.22 4.22 5.64 5.64M18.36 18.36l1.42 1.42M1 12h2m18 0h2M4.22 19.78 5.64 18.36M18.36 5.64l1.42-1.42" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </header>
+  );
+
+  /* -------------------- Certificates View -------------------- */
+  const CertificatesView = () => (
+    <motion.div
+      key="certificates"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      className="p-6 space-y-6"
+    >
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        Professional Certifications
+      </h2>
+
+      {mockCertificates.map((cert) => (
+        <div
+          key={cert.id}
+          className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg"
+        >
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-xl font-semibold text-indigo-700 dark:text-indigo-300">
+                {cert.name}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                {cert.course}
+              </p>
+            </div>
+            <button className="px-4 py-2 bg-indigo-600 text-white rounded-md">
+              Download PDF
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+            Issued on {cert.issuedDate} • {cert.hours} hours
+          </p>
+        </div>
+      ))}
+    </motion.div>
+  );
+
+  /* -------------------- Leaderboard View -------------------- */
+  const LeaderboardView = () => {
+    const sorted = mockLeaderboard
+      .map((u) => (u.name === "Aluthra" ? { ...u, points } : u))
+      .sort((a, b) => b.points - a.points);
+    return (
+      <motion.div
+        key="leaderboard"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        className="p-6"
+      >
+        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
+          Leaderboard
+        </h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+          <div className="grid grid-cols-4 px-6 py-3 font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+            <span>Rank</span>
+            <span>Name</span>
+            <span className="text-center">Points</span>
+            <span className="text-right">Tasks</span>
+          </div>
+          {sorted.map((user, idx) => (
+            <div
+              key={user.name}
+              className={`grid grid-cols-4 px-6 py-3 border-b border-gray-200 dark:border-gray-700 ${
+                user.name === "Aluthra"
+                  ? "bg-indigo-50 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 font-semibold"
+                  : "hover:bg-gray-50 dark:hover:bg-gray-700"
+              }`}
+            >
+              <span>{idx + 1}</span>
+              <span>{user.name}</span>
+              <span className="text-center">{user.points}</span>
+              <span className="text-right">{user.augmentedTasks}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    );
+  };
+
+  /* -------------------- Dashboard View -------------------- */
+  const DashboardView = () => (
+    <motion.div
+      key="dashboard"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      className="p-6 space-y-6"
+    >
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        My Performance Overview
+      </h2>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border-l-4 border-indigo-500">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Total Catalyst Points
+          </p>
+          <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+            {points}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border-l-4 border-green-500">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Completed Tasks
+          </p>
+          <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+            {tasks.filter((t) => t.isComplete).length}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-lg border-l-4 border-yellow-500">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Active Modules
+          </p>
+          <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+            {learningModules.length}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+          <h3 className="text-lg font-semibold mb-4">Learning Progress</h3>
+          {learningModules.map((m) => (
+            <div key={m.name} className="mb-4">
+              <div className="flex justify-between mb-1">
+                <span>{m.name}</span>
+                <span>{m.progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                <div
+                  className="bg-indigo-600 h-2.5 rounded-full"
+                  style={{ width: `${m.progress}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {m.daysLeft
+                  ? `${m.daysLeft} days left`
+                  : "Module completed"}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+          <h3 className="text-lg font-semibold mb-4">Upcoming Tasks</h3>
+          {tasks
+            .filter((t) => !t.isComplete)
+            .map((t) => (
+              <div
+                key={t.id}
+                className="p-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition"
+              >
+                <p className="font-medium">{t.name}</p>
+                <p className="text-sm text-gray-500">{t.status}</p>
+              </div>
+            ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  /* -------------------- Render -------------------- */
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      <Header />
+
+      <main className="flex-1 overflow-y-auto">
+        <AnimatePresence mode="wait">
+          {view === "dashboard" && <DashboardView key="dashboard" />}
+          {view === "certificates" && <CertificatesView key="certificates" />}
+          {view === "leaderboard" && <LeaderboardView key="leaderboard" />}
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+};
+
+export default App;
