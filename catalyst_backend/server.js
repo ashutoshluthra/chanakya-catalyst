@@ -10,15 +10,13 @@ const app = express();
 const BACKEND_PORT = process.env.PORT || 3001;
 
 // --- Security and Middleware ---
-// Replace the URL below with your actual Vercel deployment URL
 const allowedOrigins = [
     'http://localhost:5173',
-    'https://chanakya-catalyst.vercel.app' 
+    'https://chanakya-catalyst.vercel.app' // REPLACE with your actual Vercel URL
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
         if (allowedOrigins.indexOf(origin) === -1) {
             return callback(new Error('CORS Policy blocked this origin'), false);
@@ -32,7 +30,7 @@ app.use(cors({
 app.use(bodyParser.json());
 
 // --- Health Check Route ---
-// Pro-Tip: Open this in your browser to "wake up" the Render server before the presentation!
+// Use this to "wake up" the server 30 mins before the finale
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'Online', message: 'Chanakya Catalyst Backend is active' });
 });
@@ -66,37 +64,30 @@ const MeetingSummarySchema = {
     required: ["executive_summary", "action_items"]
 };
 
-// --- API Key Initialization ---
+// --- API Key Initialization (Modern SDK Syntax) ---
 const apiKey = process.env.GEMINI_API_KEY; 
 if (!apiKey) {
     console.error("FATAL ERROR: GEMINI_API_KEY is not set.");
     process.exit(1);
 }
-const ai = new GoogleGenAI(apiKey);
+// Note: new GoogleGenAI takes an object with apiKey property
+const ai = new GoogleGenAI({ apiKey: apiKey });
 
-// --- REFACTORED HELPER FUNCTION ---
+// --- REFACTORED HELPER FUNCTION (Unified SDK Pattern) ---
 const generateContent = async (systemInstruction, userQuery, schema = null) => {
     try {
-        const model = ai.getGenerativeModel({ 
-            model: 'gemini-1.5-flash', // Updated to stable 1.5 flash
-            systemInstruction: systemInstruction 
-        });
-
-        const generationConfig = {
-            temperature: 0.7,
-            topP: 0.8,
-            topK: 40,
-            responseMimeType: schema ? "application/json" : "text/plain",
-            responseSchema: schema || undefined,
-        };
-
-        const result = await model.generateContent({
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
             contents: [{ role: 'user', parts: [{ text: userQuery }] }],
-            generationConfig,
+            config: {
+                systemInstruction: systemInstruction,
+                responseMimeType: schema ? "application/json" : "text/plain",
+                responseSchema: schema || undefined,
+            }
         });
 
-        const response = await result.response;
-        return response.text();
+        // Modern SDK returns text directly as a property
+        return response.text;
     } catch (error) {
         console.error("Error during Gemini API call:", error);
         return `ERROR: ${error.message}`;
@@ -110,7 +101,7 @@ app.post('/api/process-summary', async (req, res) => {
     const { transcript } = req.body;
     if (!transcript) return res.status(400).json({ status: 'error', message: 'Transcript required.' });
 
-    console.log(`[LOG] Processing Summary...`);
+    console.log(`[LOG] Processing Summary via Gemini...`);
     const systemInstruction = `Act as an experienced Project Manager. Synthesis raw transcripts into JSON.`;
     const userQuery = `Analyze and output the structured JSON summary: \n\n${transcript}`;
 
@@ -119,21 +110,20 @@ app.post('/api/process-summary', async (req, res) => {
 
         if (aiResponseText.startsWith('ERROR:')) throw new Error(aiResponseText);
 
-        // Sanitize string if Gemini adds markdown markers
-        let cleanJson = aiResponseText.trim();
-        if (cleanJson.startsWith('```')) {
-            cleanJson = cleanJson.replace(/```json|```/g, '').trim();
+        // Sanitize string if Gemini adds markdown markers (Professional cleaning logic)
+        let cleanJson = aiResponseText;
+        if (typeof aiResponseText === 'string') {
+            cleanJson = aiResponseText.replace(/```json|```/g, '').trim();
         }
 
-        const summary = JSON.parse(cleanJson); 
-        console.log(`[SUCCESS] Summary returned.`);
+        const summary = typeof cleanJson === 'string' ? JSON.parse(cleanJson) : cleanJson; 
         res.json({ status: 'success', summary });
     } catch (e) {
         console.error("JSON Error:", e);
         res.status(500).json({
             status: 'error',
             message: 'Failed to parse AI output.',
-            summary: { executive_summary: "Parsing error. Please check backend logs.", action_items: [], potential_blockers: [] }
+            summary: { executive_summary: "Parsing error. Check logs.", action_items: [], potential_blockers: [] }
         });
     }
 });
@@ -142,7 +132,6 @@ app.post('/api/process-summary', async (req, res) => {
 app.post('/api/quick-skill', async (req, res) => {
     const { prompt } = req.body;
     const systemInstruction = `You are a PS SME. Provide a 3-paragraph executive summary about the topic.`;
-    
     try {
         const responseText = await generateContent(systemInstruction, prompt);
         res.json({ status: 'success', text: responseText });
@@ -155,7 +144,6 @@ app.post('/api/quick-skill', async (req, res) => {
 app.post('/api/remediate-coach', async (req, res) => {
     const { prompt } = req.body;
     const systemInstruction = `You are an AI Governance Coach. Provide a 3-step actionable plan in concise list format.`;
-
     try {
         const responseText = await generateContent(systemInstruction, prompt);
         res.json({ status: 'success', text: responseText });
@@ -166,5 +154,5 @@ app.post('/api/remediate-coach', async (req, res) => {
 
 // --- Server Start ---
 app.listen(BACKEND_PORT, () => {
-    console.log(`[SUCCESS] Server running at http://localhost:${BACKEND_PORT}`);
+    console.log(`[SUCCESS] Server running on port ${BACKEND_PORT}`);
 });
