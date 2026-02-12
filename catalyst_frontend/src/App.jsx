@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-const API_URL = "https://catalyst-backend-x5c6.onrender.com/"; // Replace with YOUR actual Render URL
+const API_URL = "https://catalyst-backend-x5c6.onrender.com"; // Replace with YOUR actual Render URL
 
 // --- MOCK DATA ---
 const initialTasks = [
